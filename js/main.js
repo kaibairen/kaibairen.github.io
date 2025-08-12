@@ -928,3 +928,107 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 })
+
+
+function loadJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        // jQuery 已经加载
+        callback();
+        return;
+    }
+
+    var script = document.createElement('script');
+    script.src = "https://code.jquery.com/jquery-3.6.0.min.js";
+    script.type = "text/javascript";
+    script.onload = callback; // 确保加载完成后执行回调
+    document.getElementsByTagName('head')[0].appendChild(script);
+}
+
+// 动态加载 jQuery，并在加载完成后执行代码
+loadJQuery(function () {
+    console.log("jQuery 动态加载完成！");
+    $(".container img").on("click", function () {
+        console.log("点击了图片！");
+    });
+});
+
+function createImgEventFullScreen() {
+    // 查找图片元素
+    var imgs = $(".container").find("img");
+    console.log(imgs);
+
+    // 为每张图片添加点击事件
+    imgs.each(function () {
+        $(this).on("click", function (e) {
+            var src = $(this).attr("src"); // 获取图片的 src 属性
+            createCover(src); // 调用创建弹窗的方法
+        });
+    });
+
+    // 创建弹窗层的方法
+    function createCover(src) {
+        // 如果弹窗层不存在，则创建，否则直接更新图片
+        if ($("#outerDiv").length === 0) {
+            var cover = $(
+                "<div id='outerDiv' style='position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:5;width:100%;height:100%;display:none;'>" +
+                "<div id='innerDiv' style='position:absolute;'><img id='bigImg' style='border:5px solid #fff;' src=''/></div>" +
+                "</div>"
+            );
+            $("body").append(cover);
+        }
+
+        // 显示弹窗层
+        imgShow("#outerDiv", "#innerDiv", "#bigImg", src);
+    }
+}
+
+// 显示大图并处理窗口适配
+function imgShow(outerDiv, innerDiv, bigImg, src) {
+    // 更新大图的 src
+    $(bigImg).attr("src", src);
+
+    // 加载图片并获取真实尺寸
+    $("<img/>")
+        .attr("src", src)
+        .on("load", function () {
+            var windowW = $(window).width(); // 窗口宽度
+            var windowH = $(window).height(); // 窗口高度
+            var realWidth = this.width; // 图片真实宽度
+            var realHeight = this.height; // 图片真实高度
+            var imgWidth, imgHeight;
+            var scale = 0.8; // 缩放比例
+
+            if (realHeight > windowH * scale) {
+                imgHeight = windowH * scale;
+                imgWidth = (imgHeight / realHeight) * realWidth;
+                if (imgWidth > windowW * scale) {
+                    imgWidth = windowW * scale;
+                }
+            } else if (realWidth > windowW * scale) {
+                imgWidth = windowW * scale;
+                imgHeight = (imgWidth / realWidth) * realHeight;
+            } else {
+                imgWidth = realWidth;
+                imgHeight = realHeight;
+            }
+
+            // 设置图片宽高及位置
+            $(bigImg).css("width", imgWidth);
+            var w = (windowW - imgWidth) / 2;
+            var h = (windowH - imgHeight) / 2;
+            $(innerDiv).css({ top: h, left: w });
+
+            // 显示弹窗层
+            $(outerDiv).fadeIn("fast");
+        });
+
+    // 点击弹窗层关闭
+    $(outerDiv).off("click").on("click", function () {
+        $(this).fadeOut("fast");
+    });
+}
+
+// 延迟加载图片事件绑定
+setTimeout(function () {
+    createImgEventFullScreen();
+}, 1000);
